@@ -76,7 +76,6 @@ class Correccion(models.TransientModel):
                 counterpart_aml_dict.update({'currency_id': currency_id})
                 counterpart_aml = aml_obj.create(counterpart_aml_dict)
 
-
             #products = ProductProduct.search([('default_code', '=', column[0])])
             #if products:
                 #if products.id not in list_projects:
