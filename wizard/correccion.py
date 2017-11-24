@@ -34,6 +34,12 @@ class Correccion(models.TransientModel):
     data_file = fields.Binary('File')
     state = fields.Selection([('choose', 'choose'), ('get', 'get')],
                             default='choose')
+    impuesto_pagado_id = fields.Many2one('account.account',
+        company_dependent=True,
+        string="Iva efectivamente pagado")
+    impuesto_pendiente_id = fields.Many2one('account.account',
+        company_dependent=True,
+        string="Iva pendiente de pago")
 
     @api.multi
     def confirm(self):
@@ -60,12 +66,12 @@ class Correccion(models.TransientModel):
                 debit, credit, amount_currency, currency_id = aml_obj.with_context(date=move.date).compute_amount_fields(move.amount, move.currency_id, move.company_id.currency_id, invoice_currency)
 
 
-                aml_dict = self._get_shared_move_line_unidentified(debit, credit, amount_currency, move.id, False)
+                aml_dict = self._get_shared_move_line_unidentified(debit, credit, amount_currency, move, False, 0)
                 #aml_dict.update(self._get_counterpart_move_line_unidentified())
                 aml_dict.update({'currency_id': currency_id})
                 aml = aml_obj.create(aml_dict)
 
-                counterpart_aml_dict = self._get_shared_move_line_unidentified(credit, debit, amount_currency, move.id, False)
+                counterpart_aml_dict = self._get_shared_move_line_unidentified(credit, debit, amount_currency, move, False, 1)
                 #counterpart_aml_dict.update(self._get_move_line_unidentified())
                 counterpart_aml_dict.update({'currency_id': currency_id})
                 counterpart_aml = aml_obj.create(counterpart_aml_dict)
@@ -96,14 +102,22 @@ class Correccion(models.TransientModel):
                 #raise UserError(_(error))
 
 #
-    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move_id, invoice_id=False):
+    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move, invoice_id=False, number):
+        account = False
+        if number == 0:
+            account = self.impuesto_pagado_id.id
+        else:
+            account = self.impuesto_pendiente_id.id
         return {
-            #'partner_id': self.env['res.partner']._find_accounting_partner(self.partner_id).id or False,
+            'partner_id': move.line_ids[0].payment_id.partner_id.id,
             'invoice_id': False,
-            'move_id': move_id,
+            'move_id': move.id,
             'debit': (debit / 1.16) * 0.16,
-            'credit': (credit / 1.16 ) * 0.16,
+            'credit': (credit / 1.16) * 0.16,
             'amount_currency': (amount_currency / 1.16) * 0.16 or False,
+            'name': 'name',
+            'account_id': account,
+            'payment_id': move.line_ids[0].payment_id.id,
         }
 
     def _get_move_line_unidentified(self, invoice=False):

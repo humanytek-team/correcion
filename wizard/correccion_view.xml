@@ -11,6 +11,8 @@
                     Wizard para corregir los problemas con los asientos contables po
                     motivo de los pago no identificados
                 </p>
+                <field name="impuesto_pagado_id" states="choose" />
+                <field name="impuesto_pendiente_id" states="choose" />
                 <field name="data_file" states="choose" />
                 <footer>
                     <button
