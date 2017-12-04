@@ -101,7 +101,7 @@ class Correccion(models.TransientModel):
                 #raise UserError(_(error))
 
 #
-    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move, invoice_id=False, number):
+    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move, invoice_id=False, number=0):
         account = False
         if number == 0:
             account = self.impuesto_pagado_id.id
