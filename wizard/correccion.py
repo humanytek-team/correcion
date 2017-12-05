@@ -75,7 +75,7 @@ class Correccion(models.TransientModel):
                 #counterpart_aml_dict.update(self._get_move_line_unidentified())
                 counterpart_aml_dict.update({'currency_id': currency_id})
                 counterpart_aml = aml_obj.create(counterpart_aml_dict)
-
+            move.post()
             #products = ProductProduct.search([('default_code', '=', column[0])])
             #if products:
                 #if products.id not in list_projects:
@@ -101,8 +101,22 @@ class Correccion(models.TransientModel):
                 #raise UserError(_(error))
 
 #
-    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move, invoice_id=False, number):
+    def _get_shared_move_line_unidentified(self, debit, credit, amount_currency, move, invoice_id=False, number=0):
+        AccountTax = self.env['account.tax']
+        tax = AccountTax.search([('name', '=','IVA(16%) VENTAS')])
         account = False
+        base = 0
+        ref = []
+        name = ''
+        for line in move.line_ids:
+            ref = line.name
+            ref = ref.split(':')
+            if len(ref) == 2:
+                name = ref[1]
+        if debit == 0:
+            base = credit / 1.16
+        else:
+            base = debit / 1.16
         if number == 0:
             account = self.impuesto_pagado_id.id
         else:
@@ -114,9 +128,11 @@ class Correccion(models.TransientModel):
             'debit': (debit / 1.16) * 0.16,
             'credit': (credit / 1.16) * 0.16,
             'amount_currency': (amount_currency / 1.16) * 0.16 or False,
-            'name': 'name',
+            'name': 'IVA (16%) VENTAS - Fact: '+name,
             'account_id': account,
+            'tax_id_secondary': tax[0].id,
             'payment_id': move.line_ids[0].payment_id.id,
+            'amount_base': base,
         }
 
     def _get_move_line_unidentified(self, invoice=False):
